@@ -844,19 +844,18 @@ with tab6:
                 magnitude_tab6 = 0 if input_4_tab6 == '' else float(input_4_tab6.replace(',', '.'))
                 
                 features_tab6 = ['event_narrative', 'log_tor_length', 'log_tor_width', 'log_tor_duration_minutes',
-                                 'magnitude', 'tor_f_scale', 'state', 'month_name']
+                                 'tor_f_scale', 'state', 'month_name']
                 X_pred_tab6 = pd.DataFrame({'event_narrative': input_8_tab6,
                                             'log_tor_length': distance_tab6,
                                             'log_tor_width': width_tab6,
                                              'log_tor_duration_minutes': duration_tab6,
-                                             'magnitude': magnitude_tab6,
                                              'tor_f_scale': input_6_tab6,
                                              'state': input_7_tab6,
                                              'month_name': input_5_tab6}, 
                                             columns=features_tab6, 
                                             index=[0])
                 
-                injury_model = joblib.load("tornado_injuries_model.pkl")
+                injury_model = joblib.load("tornado_injuries_model_new.pkl")
                 injury_probability = round(injury_model.predict_proba(X_pred_tab6)[0, 1], 3)
 
                 with col3:
