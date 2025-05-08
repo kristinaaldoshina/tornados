@@ -813,14 +813,22 @@ with tab6:
 
     st.divider()
 
-    col1, col2, col3 = st.columns([1, 1, 2])
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         input_1_tab6 = st.text_input("Width in meters", key="input_1_tab6")
         input_2_tab6 = st.text_input("Trajectory length in kilometers", key="input_2_tab6")
         input_3_tab6 = st.text_input("Duration in minutes", key="input_3_tab6")
-        input_4_tab6 = st.text_input("Magnitude", key="input_4_tab6")
+    
+    with col2:
+        input_5_tab6 = st.selectbox('Full month name', options=month_list, key="input_5_tab6")
+        input_6_tab6 = st.selectbox('F-scale value', options=fscale_list, key="input_6_tab6")
+        input_7_tab6 = st.selectbox('State', options=state_list, key="input_7_tab6")
+    
+    with col3:
+        input_8_tab6 = st.text_input('Narrative', key="input_8_tab6")
         
+        st.markdown("""<p style= 'text-align: center; margin-top: 1.8rem;'></p>""", unsafe_allow_html=True)
         if st.button("Clear all fields",  use_container_width=True, key='clear_all_tab6'):
             st.session_state["active_tab"] = "Injuries"
             st.session_state["clear_inputs_tab6"] = True
@@ -829,19 +837,13 @@ with tab6:
             st.session_state["input_6_tab6"] = "F0"
             st.session_state["input_7_tab6"] = "Alabama"
             st.rerun()
-    
-    with col2:
-        input_5_tab6 = st.selectbox('Full month name', options=month_list, key="input_5_tab6")
-        input_6_tab6 = st.selectbox('F-scale value', options=fscale_list, key="input_6_tab6")
-        input_7_tab6 = st.selectbox('State', options=state_list, key="input_7_tab6")
-        input_8_tab6 = st.text_input('Narrative', key="input_8_tab6")
-
+        
+        st.markdown("""<p style= 'text-align: center; margin-top: 1.78rem;'></p>""", unsafe_allow_html=True)
         if st.button("Predict injury probability", use_container_width=True):
             try:
                 width_tab6 = 0 if input_1_tab6 == '' else np.log1p(float(input_1_tab6.replace(',', '.')))
                 distance_tab6 = 0 if input_2_tab6 == '' else np.log1p(float(input_2_tab6.replace(',', '.')))
-                duration_tab6 = 0 if input_3_tab6 == '' else np.log1p(float(input_3_tab6.replace(',', '.')))
-                magnitude_tab6 = 0 if input_4_tab6 == '' else float(input_4_tab6.replace(',', '.'))
+                duration_tab6 = 0 if input_3_tab6 == '' else np.log1p(float(input_3_tab6.replace(',', '.')))                
                 
                 features_tab6 = ['event_narrative', 'log_tor_length', 'log_tor_width', 'log_tor_duration_minutes',
                                  'tor_f_scale', 'state', 'month_name']
