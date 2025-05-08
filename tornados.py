@@ -860,7 +860,7 @@ with tab6:
                 injury_model = joblib.load("tornado_injuries_model_new.pkl")
                 injury_probability = round(injury_model.predict_proba(X_pred_tab6)[0, 1], 3)
 
-                with col3:
+                with col4:
                     st.metric("Any injury",
                               injury_probability,
                               help="Probability to get injured by a tornado with provided specifications")
