@@ -564,19 +564,22 @@ with tab5:
     cols = st.columns([0.14, 0.14, 0.14, 0.14, 0.14, 0.3])
 
     with cols[0]:
-        total_damage = tornados_damage_filtered[damage_column].sum() / 1_000_000
+        property_damage = tornados_damage_filtered['damage_property'].sum() / 1_000_000
+        crops_damage = tornados_damage_filtered['damage_crops'].sum() / 1_000_000
+        total_damage = property_damage + crops_damage
+        # total_damage = tornados_damage_filtered[damage_column].sum() / 1_000_000
         st.metric("Total",
                   round(total_damage) if (damage_column == 'damages' and pd.notna(total_damage)) else '-',
                   help="Total damage, millions of dollars")
     
     with cols[1]:
-        property_damage = tornados_damage_filtered['damage_property'].sum() / 1_000_000
+        # property_damage = tornados_damage_filtered['damage_property'].sum() / 1_000_000
         st.metric("Property",
                   round(property_damage) if (damage_column != 'damage_crops' and pd.notna(property_damage)) else '-',
                   help="Property damage, millions of dollars")
     
     with cols[2]:
-        crops_damage = tornados_damage_filtered['damage_crops'].sum() / 1_000_000
+        # crops_damage = tornados_damage_filtered['damage_crops'].sum() / 1_000_000
         st.metric("Crops",
                   round(crops_damage) if (damage_column != 'damage_property'and pd.notna(crops_damage)) else '-',
                   help="Crops damage, millions of dollars")
