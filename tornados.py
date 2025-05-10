@@ -21,7 +21,7 @@ def get_base64_of_bin_file(bin_file):
 
 def convert_damage(x):
     if not isinstance(x, str) or x.strip() == '':
-        return pd.NA
+        return np.nan
     try:
         if 'K' in x:
             return int(float(x.replace('K', '')) * 1_000)
@@ -30,9 +30,9 @@ def convert_damage(x):
         elif 'B' in x:
             return int(float(x.replace('M', '')) * 1_000_000_000)
         else:
-            return pd.NA
+            return np.nan
     except ValueError:
-        return pd.NA
+        return np.nan
 
 
 @st.cache_data
@@ -54,7 +54,7 @@ def load_tornados_data():
     df[date_columns[2]] = df[date_columns[2]].apply(lambda column: pd.to_datetime(column, format='%m/%d/%Y %H:%M:%S', errors='coerce'))
     damage_columns = ['damage_property', 'damage_crops']
     df[damage_columns] =df[damage_columns].fillna('')
-    df[damage_columns] = df[damage_columns].map(convert_damage).astype('Int64')
+    df[damage_columns] = df[damage_columns].map(convert_damage)
     fat_columns = ['fat_yearmonth', 'fat_day', 'fat_time', 'fatality_id']
     df[fat_columns] =df[fat_columns].astype('Int32')
     df['tor_f_scale'] = df['tor_f_scale'].map(lambda x: x.replace('E', '').replace('FU', 'unknown'))
@@ -154,7 +154,6 @@ def init_session_state():
                 "input_1_tab6": "",
                 "input_2_tab6": "",
                 "input_3_tab6": "",
-                "input_4_tab6": "",
                 "input_5_tab6": "January",
                 "input_6_tab6": "F0",
                 "input_7_tab6": "Alabama",
@@ -313,8 +312,8 @@ with tab3:
                   help="Time of the day when tornado appears, 6-12: morning, 12-18: day, 18-24: evening, 24-6: night")
     
     with cols[3]:
-        avg_duration = round(tornados_filtered['tor_duration_minutes'].mean())
-        average_duration = str(avg_duration) + ' min' if not math.isnan(avg_duration) else "-"
+        avg_duration = tornados_filtered['tor_duration_minutes'].mean(skipna=True)
+        average_duration = str(round(avg_duration)) + ' min' if pd.notna(avg_duration) else "-"
         st.metric("Average duration", 
                   average_duration, 
                   help="Average duration of a tornado in minutes")
@@ -552,7 +551,7 @@ with tab5:
         st.session_state["active_tab"] = "Damages"
     
     tornados_damage_filtered = tornados.copy()
-    tornados_damage_filtered['damages'] = tornados_damage_filtered['damage_property'] + tornados_damage_filtered['damage_crops']
+    tornados_damage_filtered["damages"] = tornados_damage_filtered[["damage_property", "damage_crops"]].sum(axis=1, min_count=1)
 
     tornados_damage_filtered = tornados_damage_filtered[tornados_damage_filtered['year'].isin(year_selected_tab5)] if year_selected_tab5 else tornados_damage_filtered
     tornados_damage_filtered = tornados_damage_filtered[tornados_damage_filtered['month_name'].isin(month_selected_tab5)] if month_selected_tab5 else tornados_damage_filtered
@@ -564,28 +563,25 @@ with tab5:
     cols = st.columns([0.14, 0.14, 0.14, 0.14, 0.14, 0.3])
 
     with cols[0]:
-        property_damage = tornados_damage_filtered['damage_property'].sum() / 1_000_000
-        crops_damage = tornados_damage_filtered['damage_crops'].sum() / 1_000_000
-        total_damage = property_damage + crops_damage
-        # total_damage = tornados_damage_filtered[damage_column].sum() / 1_000_000
+        total_damage = tornados_damage_filtered[damage_column].sum(skipna=True) / 1_000_000
         st.metric("Total",
                   round(total_damage) if (damage_column == 'damages' and pd.notna(total_damage)) else '-',
                   help="Total damage, millions of dollars")
     
     with cols[1]:
-        # property_damage = tornados_damage_filtered['damage_property'].sum() / 1_000_000
+        property_damage = tornados_damage_filtered['damage_property'].sum(skipna=True) / 1_000_000
         st.metric("Property",
                   round(property_damage) if (damage_column != 'damage_crops' and pd.notna(property_damage)) else '-',
                   help="Property damage, millions of dollars")
     
     with cols[2]:
-        # crops_damage = tornados_damage_filtered['damage_crops'].sum() / 1_000_000
+        crops_damage = tornados_damage_filtered['damage_crops'].sum(skipna=True) / 1_000_000
         st.metric("Crops",
                   round(crops_damage) if (damage_column != 'damage_property'and pd.notna(crops_damage)) else '-',
                   help="Crops damage, millions of dollars")
     
     with cols[3]:
-        average_damage = tornados_damage_filtered[damage_column].mean() / 1_000_000
+        average_damage = tornados_damage_filtered[damage_column].mean(skipna=True) / 1_000_000
         st.metric("Average",
                   round(average_damage) if pd.notna(average_damage) else '-',
                   help="Average damage, millions of dollars")
@@ -748,7 +744,7 @@ with tab6:
                   help="Total amount of indirect injuries")
     
     with cols[3]:
-        average_injury_age = tornados_injury_filtered['fatality_age'].mean()
+        average_injury_age = tornados_injury_filtered['fatality_age'].mean(skipna=True)
         st.metric("Average age",
                   round(average_injury_age) if (tornados_injury_filtered[injury_column].sum() and pd.notna(average_injury_age)) > 0 else '-',
                   help="Average age of injury")
@@ -846,7 +842,7 @@ with tab6:
             try:
                 width_tab6 = 0 if input_1_tab6 == '' else np.log1p(float(input_1_tab6.replace(',', '.')))
                 distance_tab6 = 0 if input_2_tab6 == '' else np.log1p(float(input_2_tab6.replace(',', '.')))
-                duration_tab6 = 0 if input_3_tab6 == '' else np.log1p(float(input_3_tab6.replace(',', '.')))                
+                duration_tab6 = 0 if input_3_tab6 == '' else np.log1p(float(input_3_tab6.replace(',', '.')))
                 
                 features_tab6 = ['event_narrative', 'log_tor_length', 'log_tor_width', 'log_tor_duration_minutes',
                                  'tor_f_scale', 'state', 'month_name']
@@ -907,7 +903,7 @@ with tab7:
                   help="Total amount of indirect deaths")
     
     with cols[3]:
-        average_death_age = tornados_death_filtered['fatality_age'].mean()
+        average_death_age = tornados_death_filtered['fatality_age'].mean(skipna=True)
         st.metric("Average age",
                   round(average_death_age) if (tornados_death_filtered[death_column].sum() > 0 and pd.notna(average_death_age)) else '-',
                   help="Average age of death")
