@@ -1,16 +1,8 @@
-<<<<<<< HEAD
 streamlit
 duckdb
 numpy
 pandas
 plotly
 requests
-=======
-streamlit
-duckdb
-numpy
-pandas
-plotly
-requests
->>>>>>> 918c80eeaaa0ca8cb74db17f647e426650ba9cb9
 joblib
+scikit-learn
