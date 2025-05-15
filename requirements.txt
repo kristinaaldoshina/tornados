@@ -1,5 +1,4 @@
 streamlit
-io
 duckdb
 numpy
 pandas
