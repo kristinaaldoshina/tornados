@@ -1,4 +1,5 @@
 import streamlit as st
+import io
 import base64
 import duckdb
 import numpy as np
@@ -37,8 +38,16 @@ def convert_damage(x):
 
 @st.cache_data
 def load_tornados_data():
-    file_path = "usa_tornados_xxi.csv"
-    df = duckdb.sql(f"SELECT * FROM '{file_path}'").df()
+    file_url = "https://drive.google.com/uc?export=download&id=1agsHgi2sd2DUP7RmuR6G1TuHmG_OW7EN"
+    response = requests.get(file_url)
+    if response.status_code != 200:
+        st.error("Failed to download data file.")
+        st.stop()
+    csv_buffer = io.StringIO(response.content.decode('utf-8'))
+    pandas_df = pd.read_csv(csv_buffer)
+    query = f"""SELECT * FROM pandas_df"""
+    df = duckdb.query(query).to_df()
+    df.columns = df.columns.map(lambda x: x.lower())
     columns_to_keep = ['begin_yearmonth', 'begin_day', 'begin_time', 'end_yearmonth', 'end_day', 'end_time', 
                        'episode_id', 'event_id', 'state', 'year', 'month_name', 'begin_date_time', 
                        'cz_timezone', 'end_date_time', 'injuries_direct', 'injuries_indirect', 'deaths_direct', 'deaths_indirect',
@@ -47,7 +56,6 @@ def load_tornados_data():
                        'end_location', 'begin_lat', 'begin_lon', 'end_lat', 'end_lon', 'episode_narrative',
                        'event_narrative', 'fat_yearmonth', 'fat_day', 'fat_time', 'fatality_id', 'fatality_type',
                        'fatality_date', 'fatality_age', 'fatality_sex', 'fatality_location', 'event_yearmonth']
-    df.columns = df.columns.map(lambda x: x.lower())
     df = df[columns_to_keep]
     date_columns = ['begin_date_time', 'end_date_time', 'fatality_date']
     df[date_columns[:2]] = df[date_columns[:2]].apply(lambda column: pd.to_datetime(column, format='%d-%b-%y %H:%M:%S', errors='coerce'))
@@ -98,6 +106,16 @@ def draw_map(df, column):
         paper_bgcolor="rgba(0,0,0,0)",)
     return fig
 
+
+@st.cache_resource
+def load_model_from_gdrive(file_id: str):
+    file_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    response = requests.get(file_url)
+    if response.status_code != 200:
+        st.error(f"Failed to download model (status code: {response.status_code})")
+        st.stop()
+    model = joblib.load(io.BytesIO(response.content))
+    return model
 
 def day_part(x):
     if x in range(6, 13):
@@ -523,7 +541,8 @@ with tab4:
                                             'TOR_WIDTH': width_tab4}, 
                                             columns=features_tab4, 
                                             index=[0])
-                days_left_model = joblib.load("tornado_evolution_model.pkl")
+                days_left_model_id = "1xiX838Ox_ZoDL3k6EBIte_F3Tpx_Hiwu"
+                days_left_model = load_model_from_gdrive(days_left_model_id)
                 days_left_prediction = round(days_left_model.predict(X_pred_tab4)[0])
                 today = dt.datetime.today().date()
                 next_tornado_date = str(today + dt.timedelta(days=days_left_prediction))
@@ -690,10 +709,12 @@ with tab5:
                                                   columns=features_crops_tab5, 
                                                   index=[0])
                 
-                property_damage_model = joblib.load("tornado_property_model.pkl")
+                property_damage_model_id = "1anmECDiFGAFVewp23OQVbF-bKq3Q_kHP"
+                property_damage_model = load_model_from_gdrive(property_damage_model_id)
                 property_damage_prediction = property_damage_model.predict(X_pred_property_tab5)
 
-                crops_damage_model = joblib.load("tornado_crops_model.pkl")
+                crops_damage_model_id = "1z3BWuB44QbEE_u_NiMNTNv97jydFxKHA"
+                crops_damage_model = load_model_from_gdrive(crops_damage_model_id)
                 crops_damage_prediction = crops_damage_model.predict(X_pred_crops_tab5)
                 
                 with col3:
@@ -856,7 +877,8 @@ with tab6:
                                             columns=features_tab6, 
                                             index=[0])
                 
-                injury_model = joblib.load("tornado_injuries_model_new.pkl")
+                injury_model_id = "18nTfaFBWt-qeHwxSyG9C_na7TSZPGQBo"
+                injury_model = load_model_from_gdrive(injury_model_id)
                 injury_probability = round(injury_model.predict_proba(X_pred_tab6)[0, 1], 3)
 
                 with col4:
@@ -1005,10 +1027,12 @@ with tab7:
                                             columns=features_tab7, 
                                             index=[0])
 
-                total_death_model = joblib.load("tornado_all_death.pkl")
+                total_death_model_id = "1_tdKJ2CvlV2t-pgGIiTef12iGEg12Rn5"
+                total_death_model = load_model_from_gdrive(total_death_model_id)
                 total_death_probability = round(total_death_model.predict_proba(X_pred_tab7)[0, 1], 3)
 
-                indirect_death_model = joblib.load("tornado_indirect_death.pkl")
+                indirect_death_model_id = "1zzoNai0-AvcYJ9UDu_59I9oZMj-FJAtV"
+                indirect_death_model = load_model_from_gdrive(indirect_death_model_id)
                 indirect_death_probability = round(indirect_death_model.predict_proba(X_pred_tab7)[0, 1], 3)
                 
                 with col3:
